@@ -26,17 +26,18 @@ const userSchema = new Schema (
             index: true,
         },
         avatar: {
-            type: true,
+            type: String,
             required: true,
         },
         coverImage: {
             type: String, // cloudinary
         },
-        watchHistory:
+        watchHistory:[
         {
             type: Schema.Types.ObjectId,
             ref: "Video"
         },
+        ],
         password:{
             type: String,
             required: [true, "Password is required"]
@@ -54,12 +55,19 @@ const userSchema = new Schema (
     
 )
 
-userSchema.pre("save", async function (next) {
-    if(!this.isModified("password")) return next();
-    this.password = bcrypt.hash(this.password, 10)
-    next()
+// userSchema.pre("save", async function (next) {
+//     if(!this.isModified("password")) return next();
+    
+//     this.password = await bcrypt.hash(this.password, 10)
+//     next()
         
-    })
+//     })
+
+userSchema.pre("save", async function () {
+    if (!this.isModified("password")) return;
+
+    this.password = await bcrypt.hash(this.password, 10);
+});
 
 
 userSchema.methods.isPasswordCorrect = async function
@@ -68,7 +76,7 @@ userSchema.methods.isPasswordCorrect = async function
 }
 
 userSchema.methods.generateAccessToken = function(){
-    jwt.sign(
+    return jwt.sign(
         {
             _id: this.id,
             email: this.email,
@@ -83,17 +91,15 @@ userSchema.methods.generateAccessToken = function(){
     )
 }
 userSchema.methods.generateRefreshToken = function(){
-     jwt.sign(
+     return jwt.sign(
         {
             _id: this.id,
-            email: this.email,
-            username: this.username,
-            fullName: this.fullName
+            
         },
 
         process.env.REFRESH_TOKEN_SECRET,
         {
-          expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+          expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
     )
 }
